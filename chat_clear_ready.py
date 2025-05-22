@@ -363,3 +363,69 @@ if not player_memory["dialogue_history"]:
     is_new_game = True
 else:
     is_new_game = False
+
+import os
+import json
+from gpt_wrapper import call_gpt
+
+def handle_player_action(email, slot, city, user_input, is_new_game=False):
+    """
+    Обробка ходу для конкретного користувача (email) і комірки (slot).
+    Зберігає унікальну пам'ять для кожного героя окремо (hero_{email}_{slot}.json).
+    """
+    sanitized_email = email.replace("@", "_").replace(".", "_")
+    hero_file = f"hero_{sanitized_email}_{slot}.json"
+
+    # Завантажуємо або створюємо пам'ять героя
+    if is_new_game or not os.path.exists(hero_file):
+        player_memory = {
+            "email": email,
+            "slot": slot,
+            "city": city,
+            "dialogue_history": [],
+            "milestone_log": [],
+        }
+        game_summary = []
+    else:
+        with open(hero_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            player_memory = data.get("memory", {})
+            game_summary = data.get("summary", [])
+
+    # Додаємо поточний хід у історію
+    player_memory.setdefault("dialogue_history", [])
+    player_memory["dialogue_history"].append({
+        "user": user_input,
+        "assistant": ""  # відповідь GPT додамо нижче
+    })
+    player_memory["dialogue_history"] = player_memory["dialogue_history"][-6:]
+
+    # Формуємо system prompt і контекст
+    from chat_clear_ready import full_system_prompt, style_memory, build_chat_memory
+    messages = build_chat_memory(
+        system_prompt=full_system_prompt,
+        player_memory=player_memory,
+        game_summary=game_summary,
+        style_memory=style_memory,
+        current_city=city
+    )
+    messages.append({"role": "user", "content": user_input})
+
+    # Викликаємо GPT через wrapper
+    reply = call_gpt(
+        messages,
+        temperature=0.9,
+        model="gpt-4.1",
+        max_tokens=2000,
+        add_lore=True
+    )
+
+    # Додаємо відповідь GPT у останню репліку
+    player_memory["dialogue_history"][-1]["assistant"] = reply
+
+    # Зберігаємо оновлену пам'ять героя (разом із summary)
+    with open(hero_file, "w", encoding="utf-8") as f:
+        json.dump({"memory": player_memory, "summary": game_summary}, f, ensure_ascii=False, indent=2)
+
+    return reply
+

@@ -429,3 +429,16 @@ def handle_player_action(email, slot, city, user_input, is_new_game=False):
 
     return reply
 
+import os
+
+def reset_hero(email, slot):
+    sanitized_email = email.replace("@", "_").replace(".", "_")
+    hero_file = f"hero_{sanitized_email}_{slot}.json"
+    try:
+        if os.path.exists(hero_file):
+            os.remove(hero_file)
+        return True
+    except Exception:
+        return False
+
+

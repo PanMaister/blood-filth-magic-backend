@@ -399,6 +399,9 @@ def handle_player_action(email, slot, city, user_input, is_new_game=False):
         "assistant": ""  # відповідь GPT додамо нижче
     })
     player_memory["dialogue_history"] = player_memory["dialogue_history"][-6:]
+    
+    from gpt_wrapper import set_current_city
+    set_current_city(city)
 
     # Формуємо system prompt і контекст
     from chat_clear_ready import full_system_prompt, style_memory, build_chat_memory

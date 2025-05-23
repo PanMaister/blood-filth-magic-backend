@@ -1,10 +1,25 @@
 from flask import Flask, request, jsonify
 import os
+import shutil
 
 # Імпортуємо з ТВОГО основного файлу — там вже всі звʼязки з gpt_wrapper і lore_loader!
 from chat_clear_ready import handle_player_action, reset_hero
 
 app = Flask(__name__)
+
+def load_player_memory_for_user(email, slot):
+    sanitized_email = email.replace("@", "_").replace(".", "_")
+    file_name = f"hero_{sanitized_email}_{slot}.json"
+    if os.path.exists(file_name):
+        shutil.copy(file_name, "player_memory.json")
+    else:
+        with open("player_memory.json", "w", encoding="utf-8") as f:
+            f.write("{}")
+
+def save_player_memory_for_user(email, slot):
+    sanitized_email = email.replace("@", "_").replace(".", "_")
+    file_name = f"hero_{sanitized_email}_{slot}.json"
+    shutil.copy("player_memory.json", file_name)
 
 # === Основний endpoint для гри ===
 @app.route("/chat", methods=["POST"])

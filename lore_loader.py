@@ -23,7 +23,7 @@ def load_lore(city_name: str) -> str:
     if os.path.isdir(shared_folder):
         shared_files = [os.path.join("shared", file) for file in os.listdir(shared_folder) if file.endswith(".txt")]
 
-    all_files = city_files + shared_files
+    all_files = shared_files + city_files
 
     for filename in all_files:
         file_path = os.path.join(base_folder, filename)

@@ -88,15 +88,16 @@ def call_gpt(messages, temperature=0.9, model="gpt-4.1", max_tokens=2000, add_lo
     )
     return response.choices[0].message.content.strip()
 
-def smart_load_city_lore(city_name: str, max_tokens: int = 20000, model_name="gpt-4o") -> str:
+def smart_load_city_lore(city_name: str, max_tokens: int = 22000, model_name="gpt-4.1") -> str:
     """
-    Завантажує лор міста з пріоритетом: спочатку персонажі і організації, потім решта.
+    Завантажує лор міста з пріоритетом.
     """
     base_folder = "lore"
     encoding = tiktoken.encoding_for_model(model_name)
 
     # Список у новому пріоритеті
     priority_files = [
+        f"{city_name.lower()}_інструкція_міста.txt",
         f"{city_name.lower()}_персонажі.txt",
         f"{city_name.lower()}_організації.txt",
         f"{city_name.lower()}_місто.txt",
@@ -106,7 +107,6 @@ def smart_load_city_lore(city_name: str, max_tokens: int = 20000, model_name="gp
         f"{city_name.lower()}_район_дворфів.txt",
         f"{city_name.lower()}_район_ельфів.txt",
         f"{city_name.lower()}_локації.txt",
-
     ]
 
     shared_folder = os.path.join(base_folder, "shared")
@@ -115,7 +115,7 @@ def smart_load_city_lore(city_name: str, max_tokens: int = 20000, model_name="gp
     if os.path.isdir(shared_folder):
         shared_files = [file for file in os.listdir(shared_folder) if file.endswith(".txt")]
 
-    all_files = priority_files + [os.path.join("shared", file) for file in shared_files]
+    all_files = [os.path.join("shared", file) for file in shared_files] + priority_files
 
     lore_texts = []
     current_tokens = 0

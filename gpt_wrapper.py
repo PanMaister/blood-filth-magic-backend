@@ -21,10 +21,7 @@ def get_current_city():
 
 # === Лічильник токенів ===
 def count_tokens(messages, model="gpt-4o"):
-    try:
-        enc = tiktoken.encoding_for_model(model)
-    except KeyError:
-        enc = tiktoken.get_encoding("cl100k_base")
+    enc = tiktoken.get_encoding("cl100k_base")
 
     num_tokens = 0
     for message in messages:
@@ -93,7 +90,7 @@ def smart_load_city_lore(city_name: str, max_tokens: int = 22000, model_name="gp
     Завантажує лор міста з пріоритетом.
     """
     base_folder = "lore"
-    encoding = tiktoken.encoding_for_model(model_name)
+    encoding = tiktoken.get_encoding("cl100k_base")
 
     # Список у новому пріоритеті
     priority_files = [

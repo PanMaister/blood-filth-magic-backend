@@ -20,7 +20,7 @@ def get_current_city():
     return current_city
 
 # === Лічильник токенів ===
-def count_tokens(messages, model="gpt-4.1"):
+def count_tokens(messages, model="gpt-4o"):
     try:
         enc = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -35,7 +35,7 @@ def count_tokens(messages, model="gpt-4.1"):
     print(f"📏 Скільки токенів у запиті: {num_tokens}")
     return num_tokens
 
-def call_gpt(messages, temperature=0.9, model="gpt-4.1", max_tokens=2000, add_lore=True) -> str:
+def call_gpt(messages, temperature=0.9, model="gpt-4.1-2025-04-14", max_tokens=2000, add_lore=True) -> str:
     """
     Викликає GPT-4o з переданими параметрами.
     Додає приклад сцени та лор міста до контексту автоматично.
@@ -88,7 +88,7 @@ def call_gpt(messages, temperature=0.9, model="gpt-4.1", max_tokens=2000, add_lo
     )
     return response.choices[0].message.content.strip()
 
-def smart_load_city_lore(city_name: str, max_tokens: int = 22000, model_name="gpt-4.1") -> str:
+def smart_load_city_lore(city_name: str, max_tokens: int = 22000, model_name="gpt-4.1-2025-04-14") -> str:
     """
     Завантажує лор міста з пріоритетом.
     """

@@ -16,6 +16,10 @@ player_memory = {
     "milestone_log": []
 }
 game_summary = []
+
+if "super_summary" not in player_memory:
+    player_memory["super_summary"] = []
+
 style_memory = """Blood, Filth and Magic.
 Тон — абсурдний, постіронічний, брутальний, гумористичний і наповнений хтонічними істотами, магією бруду, антигероями та повсякденною розпустою.
 Стиль поєднує атмосферу "Гри престолів", "Південного парку" та "Сайлент Гіллу", де мета — вижити, напитися, уникнути поїдання власних кишок і, можливо, випадково врятувати світ.""" 
@@ -260,10 +264,10 @@ def extract_summary(user_input, reply):
 
 def summarize_old_summary():
     global game_summary
-    if len(game_summary) <= 30:
+    if len(game_summary) <= 10:
         return
-    old_part = "\n".join(game_summary[:15])
-    summarize_prompt = f"""(Ти — документаліст. Перепиши наведені 15 абзаців як 2-3 абзаци. Без зайвого пафосу.
+    old_part = "\n".join(game_summary[:5])
+    summarize_prompt = f"""(Ти — документаліст. Перепиши наведені 5 абзаців як 2 абзаци. Без зайвого пафосу.
     Стискай жорстко, але зберігай ключові дії, події, мотивації, еволюцію героя.
 
     СТАРІ ЗАПИСИ:
@@ -276,7 +280,14 @@ def summarize_old_summary():
             add_lore=False
         )
         if summary_result.strip():
-            game_summary = [summary_result.strip()] + game_summary[10:]
+            # Додаємо до super_summary
+            if "super_summary" not in player_memory:
+                player_memory["super_summary"] = []
+            player_memory["super_summary"].append(summary_result.strip())
+            # Не додаємо до game_summary — просто видаляємо перші 5
+            game_summary = game_summary[5:]
+            # Обрізаємо super_summary до 3 блоків
+            player_memory["super_summary"] = player_memory["super_summary"][-3:]
     except Exception as e:
         print("⚠️ Помилка стискання резюме:", e)
 
@@ -357,8 +368,21 @@ def build_chat_memory(system_prompt, player_memory, game_summary, style_memory, 
             "content": "🧱 ВАЖЛИВІ ПОДІЇ (MILESTONES):\n" + "\n".join(player_memory["milestone_log"][-8:])
         })
 
-    return messages
+    # Додаємо стислий синопсис/summary у пам'ять для GPT
+    if game_summary:
+        messages.append({
+            "role": "system",
+            "content": "⏳ СИНТЕТИЧНА ІСТОРІЯ ГЕРОЯ:\n" + "\n".join(game_summary[-5:])
+        })
 
+   # Додаємо super_summary (до 3-х)
+    if player_memory.get("super_summary"):
+        messages.append({
+            "role": "system",
+            "content": "📜 ДОВГА ПАМʼЯТЬ:\n" + "\n\n".join(player_memory["super_summary"])
+        })
+
+    return messages
 
 # Старт
 load_player_profile()
@@ -390,6 +414,7 @@ def handle_player_action(email, slot, city, user_input, is_new_game=False):
             "milestone_log": [],
         }
         game_summary = []
+        player_memory["dialogue_history"] = inject_fake_intro_history()
     else:
         with open(hero_file, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -402,7 +427,7 @@ def handle_player_action(email, slot, city, user_input, is_new_game=False):
         "user": user_input,
         "assistant": ""  # відповідь GPT додамо нижче
     })
-    player_memory["dialogue_history"] = player_memory["dialogue_history"][-6:]
+    player_memory["dialogue_history"] = player_memory["dialogue_history"][-10:]
     
     from gpt_wrapper import set_current_city
     set_current_city(city)
@@ -429,6 +454,9 @@ def handle_player_action(email, slot, city, user_input, is_new_game=False):
 
     # Додаємо відповідь GPT у останню репліку
     player_memory["dialogue_history"][-1]["assistant"] = reply
+    extract_summary(user_input, reply)
+    # Стискаємо summary якщо треба:
+    summarize_old_summary()
 
     # Зберігаємо оновлену пам'ять героя (разом із summary)
     with open(hero_file, "w", encoding="utf-8") as f:
